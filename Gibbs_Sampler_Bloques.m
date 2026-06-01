@@ -137,7 +137,8 @@ Nsweeps = 1000;
 block_sizes = [1, 30, 67, 90];
 nblocksizes = length(block_sizes);
 
-% guardar media condicional
+% guardar estimadores
+map_blocks = zeros(n_model, nblocksizes);
 cm_blocks = zeros(n_model, nblocksizes);
 
 for isize = 1:nblocksizes
@@ -150,6 +151,8 @@ for isize = 1:nblocksizes
 
     xk = x_tikh;
     x_cm = zeros(n_model,1);
+    logmap = -Inf;
+    x_map = xk;
 
     for sweeps = 1:Nsweeps
         
@@ -179,22 +182,41 @@ for isize = 1:nblocksizes
             xk(B) = mu_B_cond + v;
         end
         
-        % actualizar el estimador
+        % actualizar los estimadores
         x_cm = x_cm + xk;
+        logpost = -0.5 / sigma^2 * norm(A_deblur * xk - g_noise)^2 - 0.5 * (xk' * Gamma_pr_inv * xk);
+        if logpost > logmap
+            logmap = logpost;
+            x_map = xk;
+        end
     end
+    map_blocks(:, isize) = x_map;
     cm_blocks(:, isize) = x_cm / Nsweeps;
 end
 
 % visualización de resultados según el tamaño del bloque
-figure('Name','CM para distintos tamaños de bloque','Color','w');
+figure('Name','MAP/CM para distintos tamaños de bloque','Color','w');
 
+% fila superior: MAP
 for isize = 1:nblocksizes
-    subplot(1, nblocksizes, isize);
-    x_cm_plot = reshape(min(max(cm_blocks(:,isize), 0), 1), [Ny_deblur, Nx_deblur]);
-    x_cm_plot = max(x_cm_plot(:)) - x_cm_plot;
-    imagesc(x_cm_plot); axis image; colormap gray;
-    title('');
-    set(gca, 'XTick', [], 'YTick', []);
+    map_gs = min(max(map_blocks(:,isize), 0), 1);
+    map_gs = reshape(map_gs, Ny_deblur, Nx_deblur);
+    map_gs = max(map_gs(:)) - map_gs;
+
+    subplot(2, nblocksizes, isize);
+    imagesc(map_gs); axis image; colormap gray; set(gca, 'XTick', [], 'YTick', []);
+    title('MAP','FontSize',21);
+end
+
+% fila inferior: CM
+for isize = 1:nblocksizes
+    cm_gs = min(max(cm_blocks(:,isize), 0), 1);
+    cm_gs = reshape(cm_gs, Ny_deblur, Nx_deblur);
+    cm_gs = max(cm_gs(:)) - cm_gs;
+
+    subplot(2, nblocksizes, nblocksizes + isize);
+    imagesc(cm_gs); axis image; colormap gray; set(gca, 'XTick', [], 'YTick', []);
+    title('CM','FontSize',21);
     xlabel(sprintf('card = %d', block_sizes(isize)), 'FontSize', 21);
 end
 
