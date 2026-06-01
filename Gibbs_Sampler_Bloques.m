@@ -151,7 +151,7 @@ for isize = 1:nblocksizes
 
     xk = x_tikh;
     x_cm = zeros(n_model,1);
-    logmap = -Inf;
+    logpi_map = -0.5 * ((xk - post_mean)' * (Gamma_post_inv * (xk - post_mean)));
     x_map = xk;
 
     for sweeps = 1:Nsweeps
@@ -184,9 +184,9 @@ for isize = 1:nblocksizes
         
         % actualizar los estimadores
         x_cm = x_cm + xk;
-        logpost = -0.5 / sigma^2 * norm(A_deblur * xk - g_noise)^2 - 0.5 * (xk' * Gamma_pr_inv * xk);
-        if logpost > logmap
-            logmap = logpost;
+        logpi_xk = -0.5 * ((xk - post_mean)' * (Gamma_post_inv * (xk - post_mean)));
+        if logpi_xk > logpi_map
+            logpi_map = logpi_xk;
             x_map = xk;
         end
     end

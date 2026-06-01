@@ -157,7 +157,7 @@ for itau = 1:ntau
     % inicialización de estimadores MAP y CM
     cm_curr = zeros(n_model,1);
     map_curr = xk;
-    logpi_best = logpi_xk;
+    logpi_map = logpi_xk;
 
     while k < S
         k = k + 1;
@@ -180,8 +180,8 @@ for itau = 1:ntau
         
         % actualizar estimadores
         cm_curr = cm_curr + xk;
-        if logpi_xk > logpi_best
-            logpi_best = logpi_xk;
+        if logpi_xk > logpi_map
+            logpi_map = logpi_xk;
             map_curr = xk;
         end
     end
